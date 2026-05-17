@@ -1,0 +1,357 @@
+/**
+ * Liquid App — Global Design System
+ * Based on Stitch Design System "Liquid Glass UI"
+ * Colors, Typography, Spacing, and Layout tokens
+ */
+
+/* ================================
+   CSS CUSTOM PROPERTIES (TOKENS)
+   ================================ */
+
+:root,
+[data-theme="dark"] {
+  /* ---- Surface / Background ---- */
+  --surface: #0c1519;
+  --surface-dim: #0c1519;
+  --surface-bright: #323a3f;
+  --surface-container-lowest: #070f13;
+  --surface-container-low: #141d21;
+  --surface-container: #182125;
+  --surface-container-high: #232b30;
+  --surface-container-highest: #2d363b;
+  --surface-variant: #2d363b;
+  --surface-tint: #00dbe7;
+  --background: #0c1519;
+
+  /* ---- On (text colors) ---- */
+  --on-surface: #dbe4ea;
+  --on-surface-variant: #b9cacb;
+  --on-background: #dbe4ea;
+  --inverse-surface: #dbe4ea;
+  --inverse-on-surface: #293236;
+
+  /* ---- Primary ---- */
+  --primary: #e1fdff;
+  --on-primary: #00363a;
+  --primary-container: #00f2ff;
+  --on-primary-container: #006a71;
+  --inverse-primary: #00696f;
+  --primary-fixed: #74f5ff;
+  --primary-fixed-dim: #00dbe7;
+
+  /* ---- Secondary ---- */
+  --secondary: #ffffff;
+  --on-secondary: #00382c;
+  --secondary-container: #15ffd1;
+  --on-secondary-container: #00725c;
+  --secondary-fixed: #15ffd1;
+  --secondary-fixed-dim: #00e0b7;
+
+  /* ---- Tertiary ---- */
+  --tertiary: #f6f7ff;
+  --on-tertiary: #2d3137;
+  --tertiary-container: #d8dbe3;
+  --on-tertiary-container: #5c6067;
+
+  /* ---- Error ---- */
+  --error: #ffb4ab;
+  --on-error: #690005;
+  --error-container: #93000a;
+  --on-error-container: #ffdad6;
+
+  /* ---- Outline ---- */
+  --outline: #849495;
+  --outline-variant: #3a494b;
+
+  /* ---- Accent neon ---- */
+  --neon-cyan: #00f2ff;
+  --neon-teal: #15ffd1;
+  --neon-blue: #00dbe7;
+
+  /* ---- Status colors ---- */
+  --status-normal: #15ffd1;
+  --status-warning: #ffc107;
+  --status-critical: #ff4444;
+
+  /* ---- Typography ---- */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* ---- Spacing ---- */
+  --unit: 8px;
+  --gutter: 24px;
+  --container-padding: 32px;
+  --layer-gap: 16px;
+  --edge-safe: 40px;
+  --glass-padding: 20px;
+
+  /* ---- Radii ---- */
+  --radius-sm: 0.5rem;
+  --radius: 1rem;
+  --radius-md: 1.5rem;
+  --radius-lg: 2rem;
+  --radius-xl: 3rem;
+  --radius-full: 9999px;
+
+  /* ---- Transitions ---- */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 700ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ---- Sidebar ---- */
+  --sidebar-width: 96px;
+  --titlebar-height: 36px;
+
+  /* ---- Subtle layers (dark defaults) ---- */
+  --card-inset-bg: rgba(0, 0, 0, 0.15);
+  --card-inset-border: rgba(255, 255, 255, 0.04);
+  --subtle-divider: rgba(255, 255, 255, 0.04);
+  --gauge-track: rgba(255, 255, 255, 0.06);
+  --badge-success-bg: rgba(0, 200, 100, 0.1);
+  --badge-success-border: rgba(0, 200, 100, 0.3);
+  --badge-success-text: #15ffd1;
+  --badge-danger-bg: rgba(255, 80, 80, 0.1);
+  --badge-danger-border: rgba(255, 80, 80, 0.3);
+  --badge-danger-text: #ff5555;
+}
+
+/* ================================
+   LIGHT MODE
+   ================================ */
+[data-theme="light"] {
+  --surface: #f4f8fa;
+  --surface-dim: #e8ecee;
+  --surface-bright: #ffffff;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f0f4f6;
+  --surface-container: #e8ecee;
+  --surface-container-high: #dce2e5;
+  --surface-container-highest: #d0d6d9;
+  --surface-variant: #d8dde0;
+  --surface-tint: #008a91;
+  --background: #f4f8fa;
+  --on-surface: #1a2024;
+  --on-surface-variant: #3a4a4c;
+  --on-background: #1a2024;
+  --inverse-surface: #293236;
+  --inverse-on-surface: #dbe4ea;
+  --primary: #006a71;
+  --on-primary: #ffffff;
+  --primary-container: #a0f0f8;
+  --on-primary-container: #002022;
+  --secondary: #1a2024;
+  --on-secondary: #ffffff;
+  --secondary-container: #00796b;
+  --on-secondary-container: #ffffff;
+  --outline: #6a7a7c;
+  --outline-variant: #b0c0c2;
+  --neon-cyan: #008a91;
+  --neon-teal: #00796b;
+  --neon-blue: #007b83;
+  --status-normal: #00796b;
+  --status-warning: #e6a800;
+  --status-critical: #c62828;
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+
+  /* ---- Light-specific subtle layers ---- */
+  --card-inset-bg: rgba(0, 0, 0, 0.03);
+  --card-inset-border: rgba(0, 0, 0, 0.06);
+  --subtle-divider: rgba(0, 0, 0, 0.06);
+  --gauge-track: rgba(0, 0, 0, 0.06);
+  --badge-success-bg: rgba(0, 121, 107, 0.08);
+  --badge-success-border: rgba(0, 121, 107, 0.2);
+  --badge-success-text: #00796b;
+  --badge-danger-bg: rgba(198, 40, 40, 0.08);
+  --badge-danger-border: rgba(198, 40, 40, 0.2);
+  --badge-danger-text: #c62828;
+}
+
+/* ================================
+   GLOBAL RESET & BASE
+   ================================ */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--background);
+  color: var(--on-background);
+  line-height: 1.5;
+  overflow: hidden;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Ambient background gradients */
+body::before {
+  content: '';
+  position: fixed;
+  top: -10%;
+  left: -10%;
+  width: 50%;
+  height: 50%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 54, 58, 0.35) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -15%;
+  right: -15%;
+  width: 60%;
+  height: 60%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 114, 92, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+[data-theme="light"] body::before {
+  background: radial-gradient(circle, rgba(0, 138, 145, 0.08) 0%, transparent 70%);
+}
+[data-theme="light"] body::after {
+  background: radial-gradient(circle, rgba(0, 121, 107, 0.05) 0%, transparent 70%);
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================================
+   SCROLLBAR
+   ================================ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--outline-variant);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--outline);
+}
+
+/* ================================
+   TYPOGRAPHY CLASSES
+   ================================ */
+.text-display-xl {
+  font-family: var(--font-family);
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+.text-headline-lg {
+  font-family: var(--font-family);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+}
+.text-headline-md {
+  font-family: var(--font-family);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+.text-body-lg {
+  font-family: var(--font-family);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+}
+.text-body-md {
+  font-family: var(--font-family);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.text-label-sm {
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.text-label-xs {
+  font-family: var(--font-family);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ================================
+   MATERIAL SYMBOLS
+   ================================ */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  user-select: none;
+}
+.material-symbols-outlined.fill {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ================================
+   SELECTION
+   ================================ */
+::selection {
+  background: var(--primary-container);
+  color: var(--on-primary);
+}
+
+/* ================================
+   UTILITY CLASSES
+   ================================ */
+.color-primary { color: var(--primary); }
+.color-primary-container { color: var(--primary-container); }
+.color-secondary-container { color: var(--secondary-container); }
+.color-on-surface { color: var(--on-surface); }
+.color-on-surface-variant { color: var(--on-surface-variant); }
+.color-outline { color: var(--outline); }
+.color-error { color: var(--error); }
+.color-neon-cyan { color: var(--neon-cyan); }
+.color-neon-teal { color: var(--neon-teal); }
+.color-status-normal { color: var(--status-normal); }
+.color-status-warning { color: var(--status-warning); }
+.color-status-critical { color: var(--status-critical); }

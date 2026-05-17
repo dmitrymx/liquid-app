@@ -1,0 +1,17 @@
+node_modules/
+out/
+release/
+dist/
+*.log
+.env
+.DS_Store
+Thumbs.db
+node_modules
+
+# TempMonitor build artifacts
+src/main/TempMonitor/obj/
+src/main/TempMonitor/publish/
+src/main/TempMonitor/bin/
+
+# Lock file
+package-lock.json
