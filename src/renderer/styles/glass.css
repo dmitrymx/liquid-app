@@ -1,0 +1,453 @@
+/**
+ * Liquid Glass Component Styles
+ * Glassmorphism with Fresnel edges, refraction, specular highlights
+ * Directly ported from Stitch mockups
+ */
+
+/* ================================
+   BASE LIQUID GLASS
+   ================================ */
+.liquid-glass {
+  background: rgba(24, 33, 37, 0.55);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top-color: rgba(255, 255, 255, 0.2);
+  border-left-color: rgba(255, 255, 255, 0.2);
+  border-bottom-color: rgba(0, 242, 255, 0.1);
+  border-right-color: rgba(0, 242, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="light"] .liquid-glass {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 0, 0, 0.08);
+  border-top-color: rgba(255, 255, 255, 0.9);
+  border-left-color: rgba(255, 255, 255, 0.9);
+  border-bottom-color: rgba(0, 138, 145, 0.08);
+  border-right-color: rgba(0, 138, 145, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* ================================
+   HIGH ELEVATION GLASS (Navigation, Modals)
+   ================================ */
+.liquid-glass-high {
+  background: rgba(24, 33, 37, 0.35);
+  backdrop-filter: blur(30px) saturate(160%);
+  -webkit-backdrop-filter: blur(30px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-top-color: rgba(255, 255, 255, 0.3);
+  border-left-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.5);
+  border-radius: var(--radius);
+  position: relative;
+}
+
+[data-theme="light"] .liquid-glass-high {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(0, 0, 0, 0.06);
+  border-top-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* ================================
+   RECESSED GLASS (Inputs, Sliders)
+   ================================ */
+.liquid-glass-recessed {
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 4px 15px rgba(0, 0, 0, 0.5);
+  border-top: 1px solid rgba(0, 0, 0, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-full);
+}
+
+[data-theme="light"] .liquid-glass-recessed {
+  background: rgba(0, 0, 0, 0.06);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-top-color: rgba(0, 0, 0, 0.1);
+  border-bottom-color: rgba(255, 255, 255, 0.6);
+}
+
+/* ================================
+   GLASS PANEL (Cards, Sections)
+   ================================ */
+.glass-panel {
+  background: rgba(24, 33, 37, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow:
+    0 20px 40px -10px rgba(0, 0, 0, 0.5),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.1),
+    inset -1px -1px 0px rgba(21, 255, 209, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+  position: relative;
+  overflow: hidden;
+  transition: background var(--transition-normal), transform var(--transition-normal);
+  will-change: transform;
+}
+
+.glass-panel:hover {
+  background: rgba(24, 33, 37, 0.5);
+}
+
+[data-theme="light"] .glass-panel {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.06),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .glass-panel:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* ================================
+   NEON GLOW EFFECTS
+   ================================ */
+.neon-glow {
+  box-shadow: 0 0 20px rgba(0, 242, 255, 0.5), inset 0 0 10px rgba(0, 242, 255, 0.3);
+}
+
+.neon-glow-soft {
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+}
+
+.neon-text-glow {
+  text-shadow: 0 0 10px rgba(0, 242, 255, 0.7);
+}
+
+.neon-text-glow-teal {
+  text-shadow: 0 0 10px rgba(21, 255, 209, 0.7);
+}
+
+[data-theme="light"] .neon-glow,
+[data-theme="light"] .neon-glow-soft {
+  box-shadow: 0 0 10px rgba(0, 138, 145, 0.2);
+}
+
+[data-theme="light"] .neon-text-glow,
+[data-theme="light"] .neon-text-glow-teal {
+  text-shadow: none;
+}
+
+/* ================================
+   GLASS BUTTON — PRIMARY
+   ================================ */
+.glass-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-teal));
+  color: var(--on-primary);
+  border: 1px solid rgba(0, 242, 255, 0.5);
+  border-radius: var(--radius-full);
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+  box-shadow:
+    0 0 20px rgba(0, 242, 255, 0.3),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.4);
+}
+
+.glass-btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 30px rgba(0, 242, 255, 0.5),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.4);
+}
+
+.glass-btn-primary:active {
+  transform: scale(0.98);
+  filter: brightness(0.95);
+}
+
+/* ================================
+   GLASS BUTTON — GHOST
+   ================================ */
+.glass-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: rgba(24, 33, 37, 0.3);
+  color: var(--on-surface);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-full);
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.glass-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.glass-btn-ghost:active {
+  transform: scale(0.98);
+}
+
+[data-theme="light"] .glass-btn-ghost {
+  border-color: rgba(0, 0, 0, 0.15);
+  color: var(--on-surface);
+}
+[data-theme="light"] .glass-btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* ================================
+   GLASS BUTTON — ICON ONLY
+   ================================ */
+.glass-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  color: var(--on-surface-variant);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.glass-btn-icon:hover {
+  background: var(--surface-container-high);
+  color: var(--neon-cyan);
+}
+
+/* ================================
+   GLASS TOGGLE
+   ================================ */
+.glass-toggle {
+  width: 48px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  position: relative;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8);
+  border-top: 1px solid rgba(0, 0, 0, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-toggle[data-state="off"] {
+  background: var(--surface-container-highest);
+  border: 1px solid var(--outline-variant);
+}
+
+.glass-toggle[data-state="on"] {
+  background: rgba(0, 242, 255, 0.2);
+  border: 1px solid rgba(0, 242, 255, 0.3);
+}
+
+.glass-toggle-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  position: absolute;
+  top: 3px;
+  transition: all var(--transition-normal);
+}
+
+.glass-toggle[data-state="off"] .glass-toggle-thumb {
+  left: 3px;
+  background: var(--outline);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.glass-toggle[data-state="on"] .glass-toggle-thumb {
+  left: 23px;
+  background: #fff;
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.8);
+}
+
+/* ================================
+   GLASS CARD HOVER EFFECTS
+   ================================ */
+.glass-card-interactive {
+  transition: all var(--transition-slow);
+}
+
+.glass-card-interactive:hover {
+  background: var(--surface-container-high);
+  transform: translateY(-2px);
+}
+
+.glass-card-interactive:active {
+  transform: scale(0.99);
+}
+
+[data-theme="light"] .glass-row:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ================================
+   GLASS ROW (List items)
+   ================================ */
+.glass-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.1);
+  border-left-color: rgba(255, 255, 255, 0.1);
+  transition: background var(--transition-normal);
+  cursor: pointer;
+}
+
+.glass-row:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] .glass-row {
+  background: rgba(0, 0, 0, 0.03);
+  border-top-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ================================
+   PROGRESS BAR
+   ================================ */
+.glass-progress-track {
+  height: 8px;
+  width: 100%;
+  background: var(--surface-container-highest);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  border: 1px solid var(--outline-variant);
+}
+
+.glass-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, rgba(0, 242, 255, 0.5), var(--neon-cyan));
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+  transition: width var(--transition-slow);
+}
+
+.glass-progress-fill.teal {
+  background: linear-gradient(90deg, rgba(21, 255, 209, 0.5), var(--neon-teal));
+  box-shadow: 0 0 10px rgba(21, 255, 209, 0.5);
+}
+
+/* ================================
+   BADGE / CHIP
+   ================================ */
+.glass-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  color: var(--on-surface-variant);
+}
+
+.glass-badge.cyan {
+  background: rgba(0, 242, 255, 0.15);
+  color: var(--neon-cyan);
+  border-color: rgba(0, 242, 255, 0.2);
+}
+
+.glass-badge.teal {
+  background: rgba(21, 255, 209, 0.15);
+  color: var(--neon-teal);
+  border-color: rgba(21, 255, 209, 0.2);
+}
+
+/* ================================
+   LAYOUT CLASSES
+   ================================ */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-content {
+  flex: 1;
+  margin-left: calc(var(--sidebar-width) + 24px);
+  padding-top: var(--titlebar-height);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: calc(var(--titlebar-height) + 16px) var(--edge-safe) var(--edge-safe) var(--edge-safe);
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: var(--on-surface);
+}
+
+.page-header p {
+  font-size: 16px;
+  color: var(--on-surface-variant);
+  margin-top: 8px;
+  max-width: 640px;
+}
+
+.bento-grid {
+  display: grid;
+  gap: var(--gutter);
+}
+
+/* ================================
+   TITLEBAR BUTTONS
+   ================================ */
+.titlebar-btn {
+  background: transparent;
+  border: none;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  width: 32px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.titlebar-btn:hover {
+  background: var(--surface-container-highest);
+  color: var(--on-surface);
+}
+
+.titlebar-btn-close:hover {
+  background: #e81123 !important;
+  color: white !important;
+}
