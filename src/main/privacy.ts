@@ -38,7 +38,7 @@ export interface PrivacyCleanResult {
 }
 
 const HOME = os.homedir()
-const BROWSER_PROCESSES = ['chrome.exe', 'msedge.exe', 'firefox.exe', 'opera.exe', 'brave.exe']
+const BROWSER_PROCESSES = ['chrome.exe', 'msedge.exe', 'firefox.exe', 'opera.exe', 'brave.exe', 'browser.exe']
 
 /** Check if any browsers are currently running */
 async function areBrowsersRunning(): Promise<string[]> {
@@ -125,74 +125,164 @@ async function countFilesRecursive(
   return { count, size, paths }
 }
 
-/** Scan browser cookies */
-async function scanCookies(): Promise<PrivacyCategory> {
-  const cookiePaths = [
-    path.join(HOME, 'AppData/Local/Google/Chrome/User Data/Default/Network/Cookies'),
-    path.join(HOME, 'AppData/Local/Google/Chrome/User Data/Default/Cookies'),
-    path.join(HOME, 'AppData/Local/Microsoft/Edge/User Data/Default/Network/Cookies'),
-    path.join(HOME, 'AppData/Local/Microsoft/Edge/User Data/Default/Cookies'),
-  ]
-  const cookieDirs = [
-    path.join(HOME, 'AppData/Local/Google/Chrome/User Data/Default/Network'),
-    path.join(HOME, 'AppData/Local/Microsoft/Edge/User Data/Default/Network'),
-    path.join(HOME, 'AppData/Roaming/Mozilla/Firefox/Profiles'),
-  ]
+/** Dynamically detect all Chromium user profile directories */
+async function getChromiumProfiles(userDataPath: string): Promise<string[]> {
+  const profiles: string[] = []
+  try {
+    const entries = await fs.readdir(userDataPath, { withFileTypes: true })
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const profilePath = path.join(userDataPath, entry.name)
+        try {
+          await fs.access(path.join(profilePath, 'Preferences'))
+          profiles.push(profilePath)
+        } catch { /* Not a profile directory */ }
+      }
+    }
+  } catch { /* Directory does not exist */ }
+  return profiles
+}
 
-  let count = 0, size = 0
+/** Dynamically detect all Firefox user profile directories */
+async function getFirefoxProfiles(): Promise<string[]> {
+  const profiles: string[] = []
+  const ffProfilesDir = path.join(HOME, 'AppData/Roaming/Mozilla/Firefox/Profiles')
+  try {
+    const entries = await fs.readdir(ffProfilesDir, { withFileTypes: true })
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const profilePath = path.join(ffProfilesDir, entry.name)
+        try {
+          await fs.access(path.join(profilePath, 'prefs.js'))
+          profiles.push(profilePath)
+        } catch { /* Not a profile directory */ }
+      }
+    }
+  } catch { /* Directory does not exist */ }
+  return profiles
+}
+
+/** Scan browser cookies safely (no bookmark/saved password loss) */
+async function scanCookies(): Promise<PrivacyCategory> {
   const foundPaths: string[] = []
 
-  for (const cp of cookiePaths) {
-    try {
-      const st = await fs.stat(cp)
-      count++
-      size += st.size
-      foundPaths.push(cp)
-    } catch { /* skip */ }
+  // 1. Chromium browsers: Chrome, Edge, Yandex Browser, Brave
+  const chromiumDirs = [
+    path.join(HOME, 'AppData/Local/Google/Chrome/User Data'),
+    path.join(HOME, 'AppData/Local/Microsoft/Edge/User Data'),
+    path.join(HOME, 'AppData/Local/Yandex/YandexBrowser/User Data'),
+    path.join(HOME, 'AppData/Local/BraveSoftware/Brave-Browser/User Data'),
+  ]
+
+  for (const udPath of chromiumDirs) {
+    const profiles = await getChromiumProfiles(udPath)
+    for (const profile of profiles) {
+      foundPaths.push(
+        path.join(profile, 'Network/Cookies'),
+        path.join(profile, 'Cookies')
+      )
+    }
   }
 
-  for (const dir of cookieDirs) {
-    const r = await countFilesRecursive(dir, ['.sqlite', 'cookies', '.json'], 2)
-    count += r.count
-    size += r.size
-    foundPaths.push(...r.paths)
+  // 2. Opera Stable
+  const operaDir = path.join(HOME, 'AppData/Roaming/Opera Software/Opera Stable')
+  foundPaths.push(
+    path.join(operaDir, 'Network/Cookies'),
+    path.join(operaDir, 'Cookies')
+  )
+
+  // 3. Firefox profiles cookies
+  const ffProfiles = await getFirefoxProfiles()
+  for (const profile of ffProfiles) {
+    foundPaths.push(
+      path.join(profile, 'cookies.sqlite'),
+      path.join(profile, 'cookies.sqlite-shm'),
+      path.join(profile, 'cookies.sqlite-wal')
+    )
+  }
+
+  // Check stat and sum size
+  let count = 0, size = 0
+  const finalPaths: string[] = []
+  for (const p of foundPaths) {
+    try {
+      const st = await fs.stat(p)
+      count++
+      size += st.size
+      finalPaths.push(p)
+    } catch { /* File does not exist */ }
   }
 
   return {
     id: 'cookies', name: 'Browser Cookies', nameRu: 'Cookies браузеров',
-    icon: 'cookie', count, size, selected: true, paths: foundPaths,
+    icon: 'cookie', count, size, selected: true, paths: finalPaths,
     warning: '⚠ Deleting cookies will log you out of all websites. Browsers will be closed automatically.',
     warningRu: '⚠ Удаление cookies разлогинит вас из всех сайтов. Браузеры будут закрыты автоматически.'
   }
 }
 
-/** Scan browser history ONLY (not Windows Recent) */
+/** Scan browser history ONLY (no bookmarks lost) */
 async function scanBrowserHistory(): Promise<PrivacyCategory> {
-  const historyFiles = [
-    path.join(HOME, 'AppData/Local/Google/Chrome/User Data/Default/History'),
-    path.join(HOME, 'AppData/Local/Google/Chrome/User Data/Default/Visited Links'),
-    path.join(HOME, 'AppData/Local/Google/Chrome/User Data/Default/Top Sites'),
-    path.join(HOME, 'AppData/Local/Google/Chrome/User Data/Default/Shortcuts'),
-    path.join(HOME, 'AppData/Local/Microsoft/Edge/User Data/Default/History'),
-    path.join(HOME, 'AppData/Local/Microsoft/Edge/User Data/Default/Visited Links'),
-    path.join(HOME, 'AppData/Local/Microsoft/Edge/User Data/Default/Top Sites'),
-  ]
-
-  let count = 0, size = 0
   const foundPaths: string[] = []
 
-  for (const hf of historyFiles) {
+  // 1. Chromium browsers: Chrome, Edge, Yandex Browser, Brave
+  const chromiumDirs = [
+    path.join(HOME, 'AppData/Local/Google/Chrome/User Data'),
+    path.join(HOME, 'AppData/Local/Microsoft/Edge/User Data'),
+    path.join(HOME, 'AppData/Local/Yandex/YandexBrowser/User Data'),
+    path.join(HOME, 'AppData/Local/BraveSoftware/Brave-Browser/User Data'),
+  ]
+
+  for (const udPath of chromiumDirs) {
+    const profiles = await getChromiumProfiles(udPath)
+    for (const profile of profiles) {
+      foundPaths.push(
+        path.join(profile, 'History'),
+        path.join(profile, 'History-journal'),
+        path.join(profile, 'Visited Links'),
+        path.join(profile, 'Top Sites'),
+        path.join(profile, 'Shortcuts')
+      )
+    }
+  }
+
+  // 2. Opera Stable
+  const operaDir = path.join(HOME, 'AppData/Roaming/Opera Software/Opera Stable')
+  foundPaths.push(
+    path.join(operaDir, 'History'),
+    path.join(operaDir, 'History-journal'),
+    path.join(operaDir, 'Visited Links'),
+    path.join(operaDir, 'Top Sites'),
+    path.join(operaDir, 'Shortcuts')
+  )
+
+  // 3. Firefox profiles history (safe files)
+  const ffProfiles = await getFirefoxProfiles()
+  for (const profile of ffProfiles) {
+    foundPaths.push(
+      path.join(profile, 'formhistory.sqlite'),
+      path.join(profile, 'formhistory.sqlite-shm'),
+      path.join(profile, 'formhistory.sqlite-wal'),
+      path.join(profile, 'places.sqlite-shm'),
+      path.join(profile, 'places.sqlite-wal')
+    )
+  }
+
+  // Check stat and sum size
+  let count = 0, size = 0
+  const finalPaths: string[] = []
+  for (const p of foundPaths) {
     try {
-      const st = await fs.stat(hf)
+      const st = await fs.stat(p)
       count++
       size += st.size
-      foundPaths.push(hf)
-    } catch { /* skip */ }
+      finalPaths.push(p)
+    } catch { /* File does not exist */ }
   }
 
   return {
     id: 'browser_history', name: 'Browser History', nameRu: 'История браузеров',
-    icon: 'history', count, size, selected: true, paths: foundPaths,
+    icon: 'history', count, size, selected: true, paths: finalPaths,
     warning: '⚠ Browsing history, search shortcuts, and frequently visited sites will be cleared. Browsers will be closed.',
     warningRu: '⚠ История просмотров, ярлыки поиска и часто посещаемые сайты будут очищены. Браузеры будут закрыты.'
   }

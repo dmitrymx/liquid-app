@@ -83,6 +83,11 @@ const electronAPI = {
   getIpInfo: () => ipcRenderer.invoke('network:ipInfo'),
   runSpeedTest: () => ipcRenderer.invoke('network:speedTest'),
   checkAnonymity: () => ipcRenderer.invoke('network:anonymity'),
+  onSpeedTestProgress: (callback: (data: { percent: number; mbps: number }) => void) => {
+    const handler = (_event: any, data: any) => callback(data)
+    ipcRenderer.on('network:speedTestProgress', handler)
+    return () => ipcRenderer.removeListener('network:speedTestProgress', handler)
+  },
 
   /* Registry Restore */
   restoreRegistry: (backupPath: string) => ipcRenderer.invoke('registry:restore', backupPath),
@@ -129,6 +134,22 @@ const electronAPI = {
   setFanSpeed: (id: string, value: number) => ipcRenderer.invoke('fan:setSpeed', id, value),
   resetFan: (id: string) => ipcRenderer.invoke('fan:resetFan', id),
   resetAllFans: () => ipcRenderer.invoke('fan:resetAll'),
+
+  /* Network Reset */
+  resetNetwork: () => ipcRenderer.invoke('network:resetNetwork'),
+
+  /* System Tweaks */
+  getTelemetryStatus: () => ipcRenderer.invoke('tweaks:getTelemetryStatus'),
+  setTelemetryTweak: (id: string, active: boolean) => ipcRenderer.invoke('tweaks:setTelemetryTweak', id, active),
+  rollbackTelemetry: () => ipcRenderer.invoke('tweaks:rollbackTelemetry'),
+  readHosts: () => ipcRenderer.invoke('tweaks:readHosts'),
+  writeHosts: (content: string) => ipcRenderer.invoke('tweaks:writeHosts', content),
+  toggleTelemetryBlock: (active: boolean) => ipcRenderer.invoke('tweaks:toggleTelemetryBlock', active),
+  getContextMenuItems: () => ipcRenderer.invoke('tweaks:getContextMenuItems'),
+  toggleContextMenuItem: (parentPath: string, keyName: string, enabled: boolean) => ipcRenderer.invoke('tweaks:toggleContextMenuItem', parentPath, keyName, enabled),
+  listUwpApps: () => ipcRenderer.invoke('tweaks:listUwpApps'),
+  uninstallUwpApp: (name: string) => ipcRenderer.invoke('tweaks:uninstallUwpApp', name),
+  restoreDefaultUwpApps: () => ipcRenderer.invoke('tweaks:restoreDefaultUwpApps'),
 
   /* Logs */
   getLogs: () => ipcRenderer.invoke('logs:get'),

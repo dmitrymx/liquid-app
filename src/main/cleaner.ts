@@ -52,40 +52,108 @@ export interface CleanResult {
   browsersWereRunning: boolean
 }
 
-/** Browser cache paths by browser — Updated for modern Chromium (Cache_Data) */
-const BROWSER_CACHE_PATHS: Record<string, string[]> = {
-  Chrome: [
-    path.join(os.homedir(), 'AppData/Local/Google/Chrome/User Data/Default/Cache'),
-    path.join(os.homedir(), 'AppData/Local/Google/Chrome/User Data/Default/Cache_Data'),
-    path.join(os.homedir(), 'AppData/Local/Google/Chrome/User Data/Default/Code Cache'),
-    path.join(os.homedir(), 'AppData/Local/Google/Chrome/User Data/Default/Service Worker/CacheStorage'),
-    path.join(os.homedir(), 'AppData/Local/Google/Chrome/User Data/Default/GPUCache'),
-    path.join(os.homedir(), 'AppData/Local/Google/Chrome/User Data/ShaderCache'),
-  ],
-  Edge: [
-    path.join(os.homedir(), 'AppData/Local/Microsoft/Edge/User Data/Default/Cache'),
-    path.join(os.homedir(), 'AppData/Local/Microsoft/Edge/User Data/Default/Cache_Data'),
-    path.join(os.homedir(), 'AppData/Local/Microsoft/Edge/User Data/Default/Code Cache'),
-    path.join(os.homedir(), 'AppData/Local/Microsoft/Edge/User Data/Default/GPUCache'),
-    path.join(os.homedir(), 'AppData/Local/Microsoft/Edge/User Data/ShaderCache'),
-  ],
-  Firefox: [
-    path.join(os.homedir(), 'AppData/Local/Mozilla/Firefox/Profiles'),
-  ],
-  Opera: [
-    path.join(os.homedir(), 'AppData/Local/Opera Software/Opera Stable/Cache'),
-    path.join(os.homedir(), 'AppData/Local/Opera Software/Opera Stable/Cache_Data'),
-  ],
-}
-
-/** All browser process names */
-const BROWSER_PROCESSES = ['chrome.exe', 'msedge.exe', 'firefox.exe', 'opera.exe', 'brave.exe', 'vivaldi.exe']
+/** All browser process names (including Yandex Browser: browser.exe) */
+const BROWSER_PROCESSES = ['chrome.exe', 'msedge.exe', 'firefox.exe', 'opera.exe', 'brave.exe', 'vivaldi.exe', 'browser.exe']
 
 const TEMP_PATHS = [
   os.tmpdir(),
   path.join(os.homedir(), 'AppData/Local/Temp'),
   'C:\\Windows\\Temp',
 ]
+
+/** Dynamically detect all Chromium user profile directories */
+async function getChromiumProfiles(userDataPath: string): Promise<string[]> {
+  const profiles: string[] = []
+  try {
+    const entries = await fs.readdir(userDataPath, { withFileTypes: true })
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        const profilePath = path.join(userDataPath, entry.name)
+        try {
+          await fs.access(path.join(profilePath, 'Preferences'))
+          profiles.push(profilePath)
+        } catch { /* Not a profile directory */ }
+      }
+    }
+  } catch { /* Directory does not exist */ }
+  return profiles
+}
+
+/** Get all cache directories for installed browsers dynamically */
+async function getBrowserCachePaths(): Promise<string[]> {
+  const cachePaths: string[] = []
+
+  // 1. Chromium browsers: Chrome, Edge, Yandex Browser, Brave
+  const chromiumDirs = [
+    path.join(os.homedir(), 'AppData/Local/Google/Chrome/User Data'),
+    path.join(os.homedir(), 'AppData/Local/Microsoft/Edge/User Data'),
+    path.join(os.homedir(), 'AppData/Local/Yandex/YandexBrowser/User Data'),
+    path.join(os.homedir(), 'AppData/Local/BraveSoftware/Brave-Browser/User Data'),
+  ]
+
+  for (const udPath of chromiumDirs) {
+    const profiles = await getChromiumProfiles(udPath)
+    for (const profile of profiles) {
+      cachePaths.push(
+        path.join(profile, 'Cache'),
+        path.join(profile, 'Cache_Data'),
+        path.join(profile, 'Code Cache'),
+        path.join(profile, 'GPUCache'),
+        path.join(profile, 'Service Worker/CacheStorage'),
+        path.join(profile, 'Service Worker/ScriptCache')
+      )
+    }
+  }
+
+  // 2. Opera (Cache is in Local AppData, profile in Roaming)
+  const operaCacheDir = path.join(os.homedir(), 'AppData/Local/Opera Software/Opera Stable')
+  cachePaths.push(
+    path.join(operaCacheDir, 'Cache'),
+    path.join(operaCacheDir, 'Cache_Data'),
+    path.join(operaCacheDir, 'Code Cache'),
+    path.join(operaCacheDir, 'GPUCache')
+  )
+
+  // 3. Firefox (in AppData/Local/Mozilla/Firefox/Profiles)
+  const ffProfilesDir = path.join(os.homedir(), 'AppData/Local/Mozilla/Firefox/Profiles')
+  try {
+    const entries = await fs.readdir(ffProfilesDir, { withFileTypes: true })
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        cachePaths.push(path.join(ffProfilesDir, entry.name))
+      }
+    }
+  } catch { /* skip */ }
+
+  return cachePaths
+}
+
+/** Helper to get all junk paths (similar to BleachBit / FluentCleaner) */
+function getJunkPaths(): string[] {
+  const home = os.homedir()
+  return [
+    path.join(home, 'AppData/Local/CrashDumps'),
+    path.join(home, 'AppData/Local/D3DSCache'),
+    path.join(home, 'AppData/Local/NVIDIA/GLCache'),
+    path.join(home, 'AppData/Local/AMD/DxCache'),
+    path.join(home, 'AppData/Local/Intel/ShaderCache'),
+    path.join(home, 'AppData/Local/Spotify/Storage'),
+    path.join(home, 'AppData/Local/Spotify/Data'),
+    path.join(home, 'AppData/Local/Steam/htmlcache'),
+    path.join(home, 'AppData/Roaming/discord/Cache'),
+    path.join(home, 'AppData/Roaming/discord/Code Cache'),
+    path.join(home, 'AppData/Roaming/discord/GPUCache'),
+    path.join(home, 'AppData/Roaming/Telegram Desktop/tdata/user_data/cache'),
+    path.join(home, 'AppData/Roaming/Telegram Desktop/tdata/user_data/media_cache'),
+    path.join(home, 'AppData/Local/Microsoft/Windows/WER/ReportArchive'),
+    path.join(home, 'AppData/Local/Microsoft/Windows/WER/ReportQueue'),
+    'C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportArchive',
+    'C:\\ProgramData\\Microsoft\\Windows\\WER\\ReportQueue',
+    'C:\\Windows\\Minidump',
+    'C:\\Windows\\Logs',
+    'C:\\Windows\\Prefetch',
+  ]
+}
 
 /** Check if any browsers are currently running */
 export async function areBrowsersRunning(): Promise<string[]> {
@@ -161,14 +229,13 @@ async function scanTempFiles(): Promise<ScanCategory> {
 async function scanBrowserCache(): Promise<ScanCategory> {
   const allFiles: ScanFile[] = []
   let totalSize = 0
-  for (const [, paths] of Object.entries(BROWSER_CACHE_PATHS)) {
-    for (const cachePath of paths) {
-      try {
-        const result = await getDirSize(cachePath)
-        allFiles.push(...result.files)
-        totalSize += result.size
-      } catch { /* skip */ }
-    }
+  const cachePaths = await getBrowserCachePaths()
+  for (const cachePath of cachePaths) {
+    try {
+      const result = await getDirSize(cachePath)
+      allFiles.push(...result.files)
+      totalSize += result.size
+    } catch { /* skip */ }
   }
   return { id: 'browser_cache', name: 'Browser Cache', nameRu: 'Кэш браузеров', icon: 'language', files: allFiles.slice(0, 500), totalSize, selected: true }
 }
@@ -198,12 +265,7 @@ async function scanRecycleBin(): Promise<ScanCategory> {
 }
 
 async function scanJunkFiles(): Promise<ScanCategory> {
-  const junkPaths = [
-    path.join(os.homedir(), 'AppData/Local/CrashDumps'),
-    path.join(os.homedir(), 'AppData/Local/D3DSCache'),
-    'C:\\Windows\\Minidump',
-    'C:\\Windows\\Logs',
-  ]
+  const junkPaths = getJunkPaths()
   const allFiles: ScanFile[] = []
   let totalSize = 0
   for (const p of junkPaths) {
@@ -530,13 +592,24 @@ async function nukeDirectoryContents(
       const fp = path.join(dirPath, entry.name)
       try {
         const stat = await fs.stat(fp).catch(() => null)
-        const size = stat?.isDirectory() ? 0 : (stat?.size || 0)
+        let size = 0
+        let fileCount = 0
+        if (stat) {
+          if (stat.isDirectory()) {
+            const dirSizeRes = await getDirSize(fp)
+            size = dirSizeRes.size
+            fileCount = dirSizeRes.files.length
+          } else {
+            size = stat.size
+            fileCount = 1
+          }
+        }
         /* Use Promise.race with a 3s timeout to skip stuck files */
         await Promise.race([
           fs.rm(fp, { recursive: true, force: true, maxRetries: 0 }),
           new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
         ])
-        deleted++
+        deleted += fileCount
         freedBytes += size
       } catch {
         skipped++
@@ -553,9 +626,6 @@ async function nukeDirectoryContents(
 
 /**
  * Clean selected file categories.
- * IMPORTANT: Registry is excluded — must be cleaned via cleanSelectedRegistry() with explicit user selection.
- * Uses aggressive directory-level deletion + optional browser kill.
- * Emits 'cleaner:progress' events to the renderer for real-time progress tracking.
  */
 export async function cleanFiles(targetIds: string[], win?: import('electron').BrowserWindow | null, killBrowsersFirst = true): Promise<CleanResult> {
   let cleaned = 0, failed = 0, freedSpace = 0, lockedCount = 0
@@ -583,7 +653,7 @@ export async function cleanFiles(targetIds: string[], win?: import('electron').B
   if (needsBrowserKill && killBrowsersFirst) {
     await killBrowsers()
     /* Extra wait for file handles to release on Windows */
-    await new Promise(r => setTimeout(r, 1000))
+    await new Promise(r => setTimeout(r, 1500))
   }
 
   /* ── Temp files: delete contents of temp directories ── */
@@ -603,22 +673,21 @@ export async function cleanFiles(targetIds: string[], win?: import('electron').B
   /* ── Browser cache: delete entire cache directories (they will be recreated) ── */
   if (targetIds.includes('browser_cache')) {
     emit('browser_cache', 'start')
-    for (const [, paths] of Object.entries(BROWSER_CACHE_PATHS)) {
-      for (const cachePath of paths) {
-        try {
-          const stat = await fs.stat(cachePath).catch(() => null)
-          if (!stat) continue
-          const sizeResult = await getDirSize(cachePath)
-          await fs.rm(cachePath, { recursive: true, force: true, maxRetries: 3, retryDelay: 500 })
-          cleaned++
-          freedSpace += sizeResult.size
-        } catch {
-          /* If rm failed, try deleting contents individually */
-          const r = await nukeDirectoryContents(cachePath)
-          cleaned += r.deleted
-          lockedCount += r.skipped
-          freedSpace += r.freedBytes
-        }
+    const cachePaths = await getBrowserCachePaths()
+    for (const cachePath of cachePaths) {
+      try {
+        const stat = await fs.stat(cachePath).catch(() => null)
+        if (!stat) continue
+        const sizeResult = await getDirSize(cachePath)
+        await fs.rm(cachePath, { recursive: true, force: true, maxRetries: 3, retryDelay: 500 })
+        cleaned++
+        freedSpace += sizeResult.size
+      } catch {
+        /* If rm failed, try deleting contents individually */
+        const r = await nukeDirectoryContents(cachePath)
+        cleaned += r.deleted
+        lockedCount += r.skipped
+        freedSpace += r.freedBytes
       }
     }
     emit('browser_cache', 'done')
@@ -627,12 +696,7 @@ export async function cleanFiles(targetIds: string[], win?: import('electron').B
   /* ── Junk files ── */
   if (targetIds.includes('junk')) {
     emit('junk', 'start')
-    const junkPaths = [
-      path.join(os.homedir(), 'AppData/Local/CrashDumps'),
-      path.join(os.homedir(), 'AppData/Local/D3DSCache'),
-      'C:\\Windows\\Minidump',
-      'C:\\Windows\\Logs',
-    ]
+    const junkPaths = getJunkPaths()
     for (const junkPath of junkPaths) {
       const r = await nukeDirectoryContents(junkPath)
       cleaned += r.deleted
@@ -673,27 +737,37 @@ export async function cleanFiles(targetIds: string[], win?: import('electron').B
   if (targetIds.includes('windows_update')) {
     emit('windows_update', 'start')
     try {
-      /* Stop Windows Update service */
+      /* Stop Windows Update service and Delivery Optimization */
       await execAsync('net stop wuauserv /y', { timeout: 15000 }).catch(() => {})
       await execAsync('net stop bits /y', { timeout: 10000 }).catch(() => {})
+      await execAsync('net stop dosvc /y', { timeout: 15000 }).catch(() => {})
       await new Promise(r => setTimeout(r, 1000))
 
-      /* Delete contents */
+      /* Delete contents of Windows Update download cache */
       const wuPath = 'C:\\Windows\\SoftwareDistribution\\Download'
       const r = await nukeDirectoryContents(wuPath)
       cleaned += r.deleted
       failed += r.skipped
       freedSpace += r.freedBytes
 
+      /* Delete contents of Delivery Optimization cache */
+      const doPath = 'C:\\Windows\\ServiceProfiles\\NetworkService\\AppData\\Local\\Microsoft\\Windows\\DeliveryOptimization\\Cache'
+      const rDo = await nukeDirectoryContents(doPath)
+      cleaned += rDo.deleted
+      failed += rDo.skipped
+      freedSpace += rDo.freedBytes
+
       /* Restart services */
       await execAsync('net start wuauserv', { timeout: 15000 }).catch(() => {})
       await execAsync('net start bits', { timeout: 10000 }).catch(() => {})
+      await execAsync('net start dosvc', { timeout: 15000 }).catch(() => {})
     } catch (e) {
       failed++
       errors.push(`Windows Update: ${String(e)}`)
       /* Always try to restart services */
       await execAsync('net start wuauserv', { timeout: 10000 }).catch(() => {})
       await execAsync('net start bits', { timeout: 10000 }).catch(() => {})
+      await execAsync('net start dosvc', { timeout: 10000 }).catch(() => {})
     }
     emit('windows_update', 'done')
   }

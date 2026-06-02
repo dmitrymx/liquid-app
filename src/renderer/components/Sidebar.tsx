@@ -15,6 +15,7 @@ const navItems = [
   { path: '/benchmarks', icon: 'query_stats', key: 'benchmarks' },
   { path: '/privacy', icon: 'shield', key: 'privacy' },
   { path: '/network', icon: 'wifi_tethering', key: 'network' },
+  { path: '/tweaks', icon: 'tune', key: 'tweaks' },
   { path: '/tools', icon: 'build', key: 'tools' },
   { path: '/maintenance', icon: 'health_and_safety', key: 'maintenance' },
 ]

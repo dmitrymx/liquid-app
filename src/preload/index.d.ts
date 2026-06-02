@@ -55,6 +55,7 @@ interface ElectronAPI {
   getIpInfo: () => Promise<any>
   runSpeedTest: () => Promise<any>
   checkAnonymity: () => Promise<any>
+  onSpeedTestProgress: (callback: (data: { percent: number; mbps: number }) => void) => () => void
 
   /* Registry Restore */
   restoreRegistry: (backupPath: string) => Promise<any>
@@ -86,6 +87,22 @@ interface ElectronAPI {
 
   /* Cleaner Progress */
   onCleanerProgress: (callback: (data: any) => void) => () => void
+
+  /* Network Reset */
+  resetNetwork: () => Promise<{ success: boolean; log: string[] }>
+
+  /* System Tweaks */
+  getTelemetryStatus: () => Promise<Record<string, boolean>>
+  setTelemetryTweak: (id: string, active: boolean) => Promise<void>
+  rollbackTelemetry: () => Promise<void>
+  readHosts: () => Promise<string>
+  writeHosts: (content: string) => Promise<void>
+  toggleTelemetryBlock: (active: boolean) => Promise<void>
+  getContextMenuItems: () => Promise<any[]>
+  toggleContextMenuItem: (parentPath: string, keyName: string, enabled: boolean) => Promise<void>
+  listUwpApps: () => Promise<any[]>
+  uninstallUwpApp: (name: string) => Promise<void>
+  restoreDefaultUwpApps: () => Promise<void>
 }
 
 declare global {

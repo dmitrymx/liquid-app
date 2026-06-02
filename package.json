@@ -1,6 +1,6 @@
 {
   "name": "liquid-app",
-  "version": "1.7.0",
+  "version": "1.9.0",
   "description": "Liquid App — Premium System Optimizer for Windows 11 in Liquid Glass style",
   "main": "./out/main/index.js",
   "author": "Максимов Д.А. <@dmitrymx>",

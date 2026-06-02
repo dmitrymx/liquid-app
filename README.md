@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Версия-1.7.0-00f2ff?style=for-the-badge&labelColor=0c1519" alt="version">
+  <img src="https://img.shields.io/badge/Версия-1.9.0-00f2ff?style=for-the-badge&labelColor=0c1519" alt="version">
   <img src="https://img.shields.io/badge/Windows_11-Поддержка-15ffd1?style=for-the-badge&logo=windows&labelColor=0c1519" alt="windows">
   <img src="https://img.shields.io/badge/Electron-36-00dbe7?style=for-the-badge&logo=electron&labelColor=0c1519" alt="electron">
   <img src="https://img.shields.io/badge/React-19-61dafb?style=for-the-badge&logo=react&labelColor=0c1519" alt="react">
@@ -42,16 +42,23 @@
 ### Оптимизация
 - Умная очистка системы (кэш, временные файлы, корзина)
 - Очистка реестра (с автоматическим бэкапом)
-- Менеджер автозагрузки (HKCU + HKLM)
+- Менеджер автозагрузки (реестр + планировщик задач Task Scheduler)
 - Оптимизация RAM (MinWorkingSet для тяжёлых процессов)
 - Игровой режим (Ultimate/High Performance + отключение фоновых процессов)
 
 ### Сеть и безопасность
 - IP-адрес и геолокация (ip-api.com)
-- Тест скорости интернета (Selectel, Hetzner, Tele2)
+- Тест скорости интернета (Selectel, Hetzner, Tele2) с плавным спидометром
+- Быстрый сброс сети (DNS Flush, Winsock reset, TCP/IP stack reset)
 - Проверка анонимности (VPN/Proxy/Tor детекция)
 - WebRTC leak тест
-- Сканер приватности (cookies, история, трекеры)
+- Сканер приватности (безопасное удаление cookies и истории во всех профилях Chrome, Edge, Яндекс, Brave, Opera, Firefox)
+
+### Глубокие твики (System Tweaks)
+- Управление встроенной телеметрией и слежкой Windows (WER, Cortana, Ads ID, Ink)
+- Редактор контекстного меню Проводника (Shell Extensions)
+- Редактор файла Hosts с блокировкой серверов аналитики Microsoft
+- Деблоатер Windows (UWP App Uninstaller) для удаления встроенного мусора с поддержкой восстановления
 
 ### Обслуживание
 - Системные бенчмарки (CPU, RAM, Disk)
@@ -83,7 +90,7 @@
 ## Установка
 
 ### Портативная версия (рекомендуется)
-Скачайте `LiquidApp-1.7.0-portable.exe` из [Releases](../../releases) и запустите. Установка не требуется.
+Скачайте `LiquidApp-1.9.0-portable.exe` из [Releases](../../releases) и запустите. Установка не требуется.
 
 > Приложение запрашивает права администратора (UAC) для доступа к реестру, управлению службами и мониторингу оборудования.
 

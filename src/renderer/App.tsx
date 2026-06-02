@@ -13,6 +13,7 @@ import PrivacySecurity from './pages/PrivacySecurity'
 import Tools from './pages/Tools'
 import NetworkTools from './pages/NetworkTools'
 import SystemMaintenance from './pages/SystemMaintenance'
+import SystemTweaks from './pages/SystemTweaks'
 import Settings from './pages/Settings'
 import About from './pages/About'
 import { useHardwareStore } from './store/useHardwareStore'
@@ -79,6 +80,7 @@ const AppInner: React.FC = () => {
             <Route path="/privacy" element={<PrivacySecurity />} />
             <Route path="/network" element={<NetworkTools />} />
             <Route path="/maintenance" element={<SystemMaintenance />} />
+            <Route path="/tweaks" element={<SystemTweaks />} />
             <Route path="/tools" element={<Tools />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/about" element={<About />} />

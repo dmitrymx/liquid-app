@@ -12,11 +12,24 @@ import { runBenchmark } from './benchmark'
 import { getFullSystemInfo } from './utils'
 import { scanPrivacy, cleanPrivacy } from './privacy'
 import { registerWidgetIPC, cleanupWidgets, toggleWidgets, broadcastHardwareData } from './widget'
-import { getIpInfo, runSpeedTest, checkAnonymity } from './network'
+import { getIpInfo, runSpeedTest, checkAnonymity, resetNetwork } from './network'
 import { runSfc, runDismCheck, runDismRepair, runChkdsk } from './system-health'
 import { listRestorePoints, createRestorePoint, backupRegistry as backupRegistryFull, listBackups, isSystemProtectionEnabled, restoreRegistryFromBackup, restoreSystem } from './backup'
 import { activateGameMode, deactivateGameMode, getGameModeStatus } from './gamemode'
 import { installLogger, registerLoggerIPC } from './logger'
+import { 
+  getTelemetryStatus, 
+  setTelemetryTweak, 
+  rollbackTelemetry, 
+  readHosts, 
+  writeHosts, 
+  toggleTelemetryBlock, 
+  getContextMenuItems, 
+  toggleContextMenuItem, 
+  listUwpApps, 
+  uninstallUwpApp, 
+  restoreDefaultUwpApps 
+} from './tweaks'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 
@@ -230,8 +243,12 @@ function registerIPC(): void {
     catch (err) { return { error: String(err) } }
   })
 
-  ipcMain.handle('network:speedTest', async () => {
-    try { return await runSpeedTest() }
+  ipcMain.handle('network:speedTest', async (event) => {
+    try {
+      return await runSpeedTest((pct, mbps) => {
+        event.sender.send('network:speedTestProgress', { percent: pct, mbps: mbps ?? 0 })
+      })
+    }
     catch (err) { return { error: String(err) } }
   })
 
@@ -441,6 +458,22 @@ function registerIPC(): void {
   ipcMain.handle('fan:resetAll', async () => {
     try { return await resetAllFans() } catch (e: any) { return { ok: false, error: e.message } }
   })
+
+  /* ── Network Reset IPC ── */
+  ipcMain.handle('network:resetNetwork', async () => resetNetwork())
+
+  /* ── System Tweaks IPC ── */
+  ipcMain.handle('tweaks:getTelemetryStatus', async () => getTelemetryStatus())
+  ipcMain.handle('tweaks:setTelemetryTweak', async (_e, id: string, active: boolean) => setTelemetryTweak(id, active))
+  ipcMain.handle('tweaks:rollbackTelemetry', async () => rollbackTelemetry())
+  ipcMain.handle('tweaks:readHosts', async () => readHosts())
+  ipcMain.handle('tweaks:writeHosts', async (_e, content: string) => writeHosts(content))
+  ipcMain.handle('tweaks:toggleTelemetryBlock', async (_e, active: boolean) => toggleTelemetryBlock(active))
+  ipcMain.handle('tweaks:getContextMenuItems', async () => getContextMenuItems())
+  ipcMain.handle('tweaks:toggleContextMenuItem', async (_e, parentPath: string, keyName: string, enabled: boolean) => toggleContextMenuItem(parentPath, keyName, enabled))
+  ipcMain.handle('tweaks:listUwpApps', async () => listUwpApps())
+  ipcMain.handle('tweaks:uninstallUwpApp', async (_e, name: string) => uninstallUwpApp(name))
+  ipcMain.handle('tweaks:restoreDefaultUwpApps', async () => restoreDefaultUwpApps())
 
   /* Widget IPC */
   registerWidgetIPC()

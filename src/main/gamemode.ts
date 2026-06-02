@@ -65,11 +65,11 @@ async function killBackgroundProcesses(): Promise<{ killed: string[]; freedMB: n
     }
   }
 
-  /* Trim working sets of remaining processes */
+  /* Trim working sets of remaining processes — safely trim only genuinely bloated ones (>200MB) with try/catch */
   try {
     await execAsync(
-      'powershell -NoProfile -Command "Get-Process | Where-Object { $_.WorkingSet64 -gt 100MB } | ForEach-Object { $_.MinWorkingSet = [IntPtr]::new(1) }"',
-      { timeout: 10000 }
+      'powershell -NoProfile -Command "Get-Process | Where-Object { $_.WorkingSet64 -gt 200MB } | ForEach-Object { try { $_.MinWorkingSet = [IntPtr]::new(1) } catch {} }"',
+      { timeout: 15000 }
     )
   } catch {}
 

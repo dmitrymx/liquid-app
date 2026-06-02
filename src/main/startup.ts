@@ -88,31 +88,82 @@ export async function getStartupItems(): Promise<StartupItem[]> {
   }
 
   /* Check disabled items via StartupApproved */
-  try {
-    const { stdout } = await execAsync(
-      'reg query "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run"',
-      { timeout: 10000 }
-    )
-    const lines = stdout.split('\n')
-    for (const line of lines) {
-      const match = line.match(/^\s{4}(.+?)\s{4}REG_BINARY\s{4}(.+)/i)
-      if (match) {
-        const itemName = match[1].trim()
-        const binaryData = match[2].trim()
-        const isDisabled = binaryData.startsWith('03')
-        const existing = allItems.find(i => i.name === itemName)
-        if (existing && isDisabled) {
-          existing.enabled = false
+  const approvedKeys = [
+    { hive: 'HKCU', key: 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' },
+    { hive: 'HKLM', key: 'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run' },
+  ]
+  for (const { hive, key } of approvedKeys) {
+    try {
+      const { stdout } = await execAsync(
+        `reg query "${hive}\\${key}"`,
+        { timeout: 10000 }
+      )
+      const lines = stdout.split('\n')
+      for (const line of lines) {
+        const match = line.match(/^\s{4}(.+?)\s{4}REG_BINARY\s{4}(.+)/i)
+        if (match) {
+          const itemName = match[1].trim()
+          const binaryData = match[2].trim()
+          const isDisabled = binaryData.startsWith('03')
+          const existing = allItems.find(i => i.name === itemName && i.isSystem === (hive === 'HKLM'))
+          if (existing && isDisabled) {
+            existing.enabled = false
+          }
         }
       }
+    } catch { /* Not available */ }
+  }
+
+  /* Check scheduled tasks */
+  try {
+    const psScript = `Get-ScheduledTask | Where-Object { $_.TaskPath -notlike '\\\\Microsoft*' -and $_.Actions.Execute } | ForEach-Object { [PSCustomObject]@{ TaskName = $_.TaskName; TaskPath = $_.TaskPath; State = $_.State.ToString(); Execute = $_.Actions.Execute } } | ConvertTo-Json -Compress`
+    const escapedCmd = psScript.replace(/"/g, '\\"')
+    const { stdout } = await execAsync(`powershell -NoProfile -NonInteractive -Command "${escapedCmd}"`, { timeout: 15000 })
+    if (stdout.trim()) {
+      const parsed = JSON.parse(stdout)
+      const tasks = Array.isArray(parsed) ? parsed : [parsed]
+      for (const t of tasks) {
+        if (!t.TaskName) continue
+        const executeStr = Array.isArray(t.Execute) ? t.Execute.join('; ') : t.Execute
+        allItems.push({
+          id: `schtask:${t.TaskPath || '\\'}:${t.TaskName}`,
+          name: t.TaskName,
+          command: executeStr || '',
+          location: `Task Scheduler (${t.TaskPath || '\\'})`,
+          publisher: extractPublisher(executeStr || ''),
+          impact: estimateImpact(t.TaskName, executeStr || ''),
+          enabled: t.State !== 'Disabled',
+          isSystem: false
+        })
+      }
     }
-  } catch { /* Not available */ }
+  } catch (err) {
+    console.error('[Startup] Failed to fetch scheduled tasks:', err)
+  }
 
   return allItems
 }
 
 /** Toggle a startup item on/off */
 export async function toggleStartupItem(id: string, enabled: boolean): Promise<{ success: boolean }> {
+  if (id.startsWith('schtask:')) {
+    const parts = id.split(':')
+    if (parts.length < 3) return { success: false }
+    const taskPath = parts[1]
+    const taskName = parts.slice(2).join(':')
+
+    try {
+      const action = enabled ? 'Enable-ScheduledTask' : 'Disable-ScheduledTask'
+      const cmd = `${action} -TaskName "${taskName}" -TaskPath "${taskPath}"`
+      const escapedCmd = cmd.replace(/"/g, '\\"')
+      await execAsync(`powershell -NoProfile -NonInteractive -Command "${escapedCmd}"`, { timeout: 10000 })
+      return { success: true }
+    } catch (err) {
+      console.error('[Startup] Failed to toggle scheduled task:', err)
+      return { success: false }
+    }
+  }
+
   const parts = id.split(':')
   if (parts.length < 3) return { success: false }
 

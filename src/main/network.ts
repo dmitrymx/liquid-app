@@ -61,7 +61,11 @@ function httpGet(url: string, timeout = 8000): Promise<any> {
 }
 
 /** Simple HTTP download measuring throughput */
-function measureDownload(url: string, durationMs = 5000): Promise<{ bytesReceived: number; elapsed: number; latency: number }> {
+function measureDownload(
+  url: string,
+  durationMs = 5000,
+  onSpeedUpdate?: (mbps: number) => void
+): Promise<{ bytesReceived: number; elapsed: number; latency: number }> {
   return new Promise((resolve, reject) => {
     const start = Date.now()
     let firstByte = 0
@@ -71,6 +75,11 @@ function measureDownload(url: string, durationMs = 5000): Promise<{ bytesReceive
       res.on('data', chunk => {
         if (!firstByte) firstByte = Date.now()
         bytesReceived += chunk.length
+        const elapsed = Date.now() - start
+        if (elapsed > 200 && onSpeedUpdate) {
+          const speedMbps = (bytesReceived * 8) / (elapsed / 1000) / 1_000_000
+          onSpeedUpdate(speedMbps)
+        }
         if (Date.now() - start > durationMs) {
           res.destroy()
         }
@@ -79,8 +88,9 @@ function measureDownload(url: string, durationMs = 5000): Promise<{ bytesReceive
         resolve({
           bytesReceived,
           elapsed: Date.now() - start,
+          mono: true, // dummy line to align
           latency: firstByte ? firstByte - start : 0
-        })
+        } as any)
       })
       res.on('close', () => {
         resolve({
@@ -121,7 +131,7 @@ export async function getIpInfo(): Promise<IpInfo | { error: string }> {
 }
 
 /** Run a simple download speed test using public speed test servers */
-export async function runSpeedTest(onProgress?: (pct: number) => void): Promise<SpeedTestResult | { error: string }> {
+export async function runSpeedTest(onProgress?: (pct: number, mbps?: number) => void): Promise<SpeedTestResult | { error: string }> {
   try {
     /* Step 1: Measure latency with HTTPS requests to Cloudflare CDN
        (ip-api.com is HTTP-only and rate-limited to 45 req/min) */
@@ -134,7 +144,7 @@ export async function runSpeedTest(onProgress?: (pct: number) => void): Promise<
     const avgLatency = Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
     const jitter = Math.round(Math.max(...latencies) - Math.min(...latencies))
 
-    if (onProgress) onProgress(20)
+    if (onProgress) onProgress(20, 0)
 
     /* Step 2: Download speed — use reliable public test servers.
        Selectel (RU, HTTPS) → Hetzner (EU, HTTPS) → Tele2 (global, HTTP).
@@ -151,7 +161,12 @@ export async function runSpeedTest(onProgress?: (pct: number) => void): Promise<
 
     for (const { url, server } of testUrls) {
       try {
-        const result = await measureDownload(url, 5000)
+        const result = await measureDownload(url, 5000, (currentMbps) => {
+          if (onProgress) {
+            const pct = Math.round(20 + (tested / testUrls.length) * 70)
+            onProgress(pct, currentMbps)
+          }
+        })
         if (result.bytesReceived > 0) {
           const speedMbps = (result.bytesReceived * 8) / (result.elapsed / 1000) / 1_000_000
           if (speedMbps > bestSpeed) {
@@ -160,12 +175,12 @@ export async function runSpeedTest(onProgress?: (pct: number) => void): Promise<
           }
         }
         tested++
-        if (onProgress) onProgress(20 + (tested / testUrls.length) * 70)
+        if (onProgress) onProgress(20 + (tested / testUrls.length) * 70, bestSpeed)
         if (bestSpeed > 0) break /* Good enough if we got at least one measurement */
       } catch { /* try next */ }
     }
 
-    if (onProgress) onProgress(100)
+    if (onProgress) onProgress(100, bestSpeed)
 
     return {
       downloadMbps: Math.round(bestSpeed * 10) / 10,
@@ -231,4 +246,33 @@ export async function checkAnonymity(): Promise<AnonymityResult | { error: strin
   } catch (err) {
     return { error: `Anonymity check error: ${String(err)}` }
   }
+}
+
+/** Reset network stack (DNS flush, TCP/IP reset, Winsock reset) */
+export async function resetNetwork(): Promise<{ success: boolean; log: string[] }> {
+  const log: string[] = []
+  const { exec } = require('child_process')
+  const execAsync = promisify(exec)
+  let success = true
+
+  const commands = [
+    { cmd: 'ipconfig /flushdns', label: 'Очистка кэша DNS' },
+    { cmd: 'netsh winsock reset', label: 'Сброс каталога Winsock' },
+    { cmd: 'netsh int ip reset', label: 'Сброс стека TCP/IP' },
+    { cmd: 'ipconfig /release', label: 'Освобождение IP-адреса' },
+    { cmd: 'ipconfig /renew', label: 'Обновление IP-адреса' }
+  ]
+
+  for (const item of commands) {
+    try {
+      log.push(`[RUN] ${item.label}...`)
+      const { stdout } = await execAsync(item.cmd, { timeout: 15000 })
+      log.push(stdout.trim() || 'Успешно.')
+    } catch (err: any) {
+      success = false
+      log.push(`[ERR] Ошибка: ${err.message || err}`)
+    }
+  }
+
+  return { success, log }
 }

@@ -15,7 +15,8 @@ const flag = (code: string) => {
 }
 
 const NetworkTools: React.FC = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isRu = i18n.language === 'ru'
   /* ── IP ── */
   const [ipData, setIpData] = useState<any>(null)
   const [ipLoading, setIpLoading] = useState(false)
@@ -28,8 +29,19 @@ const NetworkTools: React.FC = () => {
   const [anonLoading, setAnonLoading] = useState(false)
   /* ── WebRTC ── */
   const [webRtcIps, setWebRtcIps] = useState<string[]>([])
+  
+  /* ── Network Reset ── */
+  const [resetLog, setResetLog] = useState<string[]>([])
+  const [resetRunning, setResetRunning] = useState(false)
+  const [resetStatus, setResetStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const resetLogRef = useRef<HTMLDivElement>(null)
 
-  const speedInterval = useRef<any>(null)
+  useEffect(() => {
+    if (resetLogRef.current) {
+      resetLogRef.current.scrollTop = resetLogRef.current.scrollHeight
+    }
+  }, [resetLog])
+
 
   /* Auto-load IP on mount */
   useEffect(() => { fetchIp() }, [])
@@ -47,18 +59,22 @@ const NetworkTools: React.FC = () => {
     setSpeedLoading(true)
     setSpeedResult(null)
     setSpeedProgress(0)
-    /* Animate progress bar */
-    let p = 0
-    speedInterval.current = setInterval(() => {
-      p = Math.min(p + Math.random() * 8, 90)
-      setSpeedProgress(p)
-    }, 300)
+    
+    /* Subscribe to real-time progress events from the backend */
+    const unsubscribe = ipc.onSpeedTestProgress((data) => {
+      setSpeedProgress(data.percent)
+      if (data.mbps > 0) {
+        setSpeedResult({ downloadMbps: data.mbps, latencyMs: 0, jitterMs: 0, serverLocation: '' })
+      }
+    })
+
     try {
       const data = await ipc.runSpeedTest()
       setSpeedResult(data)
       setSpeedProgress(100)
     } catch { setSpeedResult({ error: 'Failed' }) }
-    clearInterval(speedInterval.current)
+    
+    unsubscribe()
     setSpeedLoading(false)
   }
 
@@ -98,6 +114,27 @@ const NetworkTools: React.FC = () => {
       }
       setTimeout(() => { try { pc.close() } catch {} setWebRtcIps(ips) }, 3000)
     } catch { /* WebRTC not available */ }
+  }
+
+  const runReset = async () => {
+    const confirmMsg = isRu 
+      ? 'Вы действительно хотите выполнить сброс параметров сети? Это временно прервет ваше подключение к интернету.' 
+      : 'Are you sure you want to reset network parameters? This will temporarily interrupt your internet connection.'
+    if (!confirm(confirmMsg)) return
+
+    setResetRunning(true)
+    setResetStatus('idle')
+    setResetLog([isRu ? '[START] Запуск процесса восстановления сети...' : '[START] Launching network restoration...'])
+
+    try {
+      const res = await ipc.resetNetwork()
+      setResetLog(res.log || [])
+      setResetStatus(res.success ? 'success' : 'error')
+    } catch (err: any) {
+      setResetLog(prev => [...prev, `[ERR] ${err.message || err}`])
+      setResetStatus('error')
+    }
+    setResetRunning(false)
   }
 
   /* ── Reusable components ── */
@@ -377,6 +414,53 @@ const NetworkTools: React.FC = () => {
               {t('network.notTested')}
             </div>
           )}
+        </Card>
+
+        {/* ── NETWORK RESET ── full-width */}
+        <Card style={{ gridColumn: '1 / -1' }}>
+          <CardHeader icon="construction" title={isRu ? 'Восстановление и сброс сети' : 'Network Repair & Reset'} />
+          <div style={{ display: 'flex', gap: 24, flexDirection: 'row', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 280 }}>
+              <p style={{ fontSize: 13, color: 'var(--on-surface-variant)', lineHeight: 1.6, margin: 0 }}>
+                {isRu ? 'Очищает кэш DNS (DNS Cache), сбрасывает стек сетевых протоколов TCP/IP и каталог Winsock. Помогает восстановить интернет-подключение при сбоях и ошибках сети, очищает мусорные маршруты и обновляет локальный IP-адрес.'
+                      : 'Clears DNS Resolver Cache, resets the TCP/IP stack policies, and rebuilds Winsock catalog. Helps fix connectivity issues, DNS failures, or invalid routing parameters.'}
+              </p>
+              <button 
+                className="glass-btn-primary" 
+                onClick={runReset} 
+                disabled={resetRunning}
+                style={{ marginTop: 20, padding: '12px 24px', fontSize: 13 }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 16, animation: resetRunning ? 'spin 1s linear infinite' : 'none', marginRight: 8, verticalAlign: 'middle' }}>
+                  {resetRunning ? 'progress_activity' : 'construction'}
+                </span>
+                {resetRunning ? (isRu ? 'Сброс параметров...' : 'Resetting network...') : (isRu ? 'Запустить сброс сети' : 'Run Network Reset')}
+              </button>
+            </div>
+            
+            {resetLog.length > 0 && (
+              <div style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: 'var(--on-surface)' }}>
+                  {isRu ? 'Журнал выполнения:' : 'Execution log:'}
+                </div>
+                <div 
+                  ref={resetLogRef}
+                  style={{
+                    height: 140, overflowY: 'auto', padding: 12, borderRadius: 8,
+                    background: 'var(--card-inset-bg)', fontFamily: 'Consolas, monospace',
+                    fontSize: 11, color: 'var(--on-surface-variant)', lineHeight: 1.6,
+                    border: '1px solid var(--card-inset-border)'
+                  }}
+                >
+                  {resetLog.map((line, i) => (
+                    <div key={i} style={{ color: line.startsWith('[ERR]') ? 'var(--badge-danger-text)' : line.startsWith('[START]') ? 'var(--neon-cyan)' : undefined }}>
+                      {line}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </Card>
       </div>
     </div>

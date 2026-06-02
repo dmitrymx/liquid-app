@@ -54,6 +54,7 @@ export const ipc = {
   getIpInfo: () => api?.getIpInfo() ?? Promise.resolve(null),
   runSpeedTest: () => api?.runSpeedTest() ?? Promise.resolve(null),
   checkAnonymity: () => api?.checkAnonymity() ?? Promise.resolve(null),
+  onSpeedTestProgress: (cb: (d: { percent: number; mbps: number }) => void) => api?.onSpeedTestProgress(cb) ?? (() => {}),
 
   /* Registry Restore */
   restoreRegistry: (backupPath: string) => api?.restoreRegistry(backupPath) ?? Promise.resolve(null),
@@ -88,6 +89,22 @@ export const ipc = {
   setFanSpeed: (id: string, value: number) => api?.setFanSpeed(id, value) ?? Promise.resolve({ ok: false }),
   resetFan: (id: string) => api?.resetFan(id) ?? Promise.resolve({ ok: false }),
   resetAllFans: () => api?.resetAllFans() ?? Promise.resolve({ ok: false }),
+
+  /* Network Reset */
+  resetNetwork: () => api?.resetNetwork() ?? Promise.resolve({ success: false, log: [] }),
+
+  /* System Tweaks */
+  getTelemetryStatus: () => api?.getTelemetryStatus() ?? Promise.resolve({}),
+  setTelemetryTweak: (id: string, active: boolean) => api?.setTelemetryTweak(id, active) ?? Promise.resolve(),
+  rollbackTelemetry: () => api?.rollbackTelemetry() ?? Promise.resolve(),
+  readHosts: () => api?.readHosts() ?? Promise.resolve(''),
+  writeHosts: (content: string) => api?.writeHosts(content) ?? Promise.resolve(),
+  toggleTelemetryBlock: (active: boolean) => api?.toggleTelemetryBlock(active) ?? Promise.resolve(),
+  getContextMenuItems: () => api?.getContextMenuItems() ?? Promise.resolve([]),
+  toggleContextMenuItem: (parentPath: string, keyName: string, enabled: boolean) => api?.toggleContextMenuItem(parentPath, keyName, enabled) ?? Promise.resolve(),
+  listUwpApps: () => api?.listUwpApps() ?? Promise.resolve([]),
+  uninstallUwpApp: (name: string) => api?.uninstallUwpApp(name) ?? Promise.resolve(),
+  restoreDefaultUwpApps: () => api?.restoreDefaultUwpApps() ?? Promise.resolve(),
 
   /* Logs */
   getLogs: () => api?.getLogs() ?? Promise.resolve([]),
